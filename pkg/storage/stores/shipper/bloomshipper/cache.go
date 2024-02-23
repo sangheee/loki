@@ -50,10 +50,7 @@ func NewBlocksCache(cfg cache.EmbeddedCacheConfig, reg prometheus.Registerer, lo
 }
 
 func calculateBlockDirectorySize(entry *cache.Entry[string, BlockDirectory]) uint64 {
-	value := entry.Value
-	bloomFileStats, _ := os.Lstat(path.Join(value.Path, v1.BloomFileName))
-	seriesFileStats, _ := os.Lstat(path.Join(value.Path, v1.SeriesFileName))
-	return uint64(bloomFileStats.Size() + seriesFileStats.Size())
+	return uint64(entry.Value.Size())
 }
 
 func NewBlockDirectory(ref BlockRef, path string, logger log.Logger) BlockDirectory {
@@ -89,6 +86,12 @@ func (b BlockDirectory) Acquire() {
 func (b BlockDirectory) Release() error {
 	_ = b.refCount.Dec()
 	return nil
+}
+
+func (b BlockDirectory) Size() int64 {
+	bloomFileStats, _ := os.Lstat(path.Join(b.Path, v1.BloomFileName))
+	seriesFileStats, _ := os.Lstat(path.Join(b.Path, v1.SeriesFileName))
+	return bloomFileStats.Size() + seriesFileStats.Size()
 }
 
 // BlockQuerier returns a new block querier from the directory.
